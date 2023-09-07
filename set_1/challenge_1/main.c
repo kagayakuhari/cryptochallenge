@@ -27,6 +27,7 @@ int main(void) {
   if (!(fgets(data, MAX_LEN, stdin))) {
     fprintf(stderr, "%s\n", "Error getting input data.");
     free(data);
+    free(output_data);
     return -1;
   }
 
@@ -37,13 +38,19 @@ int main(void) {
     data[data_length - 1] = '\0';
 
   // Encode into base64
-  // Don't send last character (null character)
-  output_data = hex2base64(data, data_length - 1);
+  // Don't encode last character (null character)
+  if (!(output_data = hex2base64(data, data_length - 1))) {
+    fprintf(stderr, "%s\n", "Encode error.");
+    free(data);
+    free(output_data);
+    return -1;
+  }
 
   // Print output
   printf("%s\n", output_data);
 
   // Cleanup
   free(data);
+  free(output_data);
   return 0;
 }

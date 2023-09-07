@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <strings.h>
 
+// From Wikipedia: https://en.wikipedia.org/wiki/Base64#Base64_table_from_RFC_4648
 static const char encode_table[] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -16,15 +17,24 @@ char *hex2base64(char *hex_data, size_t in_len) {
   int i, j;
 
   // Output length must be multiple of four.
-  // Blocks of 3 bytes must become 4-byte blocks.
+  // 3 bytes must become 6-bit blocks.
+  //
+  // in_len + 2 to accommodate possible padding
+  // Divided by 3 to get the amount of 3-byte blocks in the input
+  // Multiplied by 4 to get the total amount of blocks in the output
+  //
+  // 'Vicente' gets split as 'vic', 'ent' 'e  '
+  // strlen("Vicente") = 7  <---- in_len
+  // ((7 + 2) / 3) * 4 = 12 <---- out_len
+  //
+  // base64("Vicente") = VmljZW50ZQ==
   out_len = ((in_len + 2) / 3) * 4;
 
   // Check for overflow
   if (out_len < in_len)
     return NULL;
 
-  // Allocate memory for output
-  // REMEMBER TO ALLOCATE NULL BYTE AS WELL
+  // Allocate memory for output + NULL byte
   if (!(encoded_data = (char *)malloc(out_len + 1)))
     // Allocation failed
     return NULL;
@@ -44,10 +54,10 @@ char *hex2base64(char *hex_data, size_t in_len) {
                      (byte2 >> 4)]; // OR remaining 2 bits with 4 bits = 6 bits
     encoded_data[j++] =
         encode_table[((byte2 & 0x0F) << 2) | (byte3 >> 6)]; // Idem
-    encoded_data[j++] = encode_table[byte3 & 0x3F];
+    encoded_data[j++] = encode_table[byte3 & 0x3F]; // Remaining 6 bits
   }
 
-  // Check if we need padding
+  // Check if we need padding and add it
   for (padding = in_len % 3; padding > 0; padding--) {
     encoded_data[out_len - padding] = '=';
   }
